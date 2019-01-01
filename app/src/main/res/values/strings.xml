@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Fat2Fit</string>
+    <string name="step_count">Step count:</string>
+    <string name="calories_burned">Calories burned:</string>
+    <string name="distance_in_km">Distance (in km):</string>
+    <string name="there_would_be_a_nice_chart_trust_me">There would be a nice chart, trust me!</string>
+    <string name="daily_goals_progress">Daily goals progress:</string>
 </resources>
