@@ -1,5 +1,6 @@
 package com.example.monik.fat2fit;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.support.annotation.NonNull;
@@ -34,21 +35,13 @@ import com.google.android.gms.fitness.result.DataSourcesResult;
 
 import java.util.concurrent.TimeUnit;
 
-public class MainActivity extends AppCompatActivity implements
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-
+public class MainActivity extends BaseActivity {
 
     //BŁĄD Z POŁĄCZENIEM CONNECTION ISSUE CODE 2!!!!!!!!!!
     //!!!!!!!!!!!!!!!!!!1
     //!!!!!!!!!!!!!!!!!!!111111111111
 
-    //[START Auth_Variable_References]
-    private static final int REQUEST_OAUTH = 1;
-    // [END auth_variable_references]
 
-    private static final String TAG = "GoogleFitActivity";
-
-    private GoogleApiClient googleApiClient = null;
     TextView stepsTextView;
     int initialNumberOfSteps = 0;
     private boolean firstCount = true;
@@ -60,15 +53,21 @@ public class MainActivity extends AppCompatActivity implements
         stepsTextView = (TextView) findViewById(R.id.stepsTextView);
     }
 
-    private void connectToGoogleApi() {
+    //jeśli nie będę korzystać z tych samych scopów, to zostanie tak, a
+    // jak w każdej aktywności będą te same, to do nadklasy
+    @Override
+    protected void connectToGoogleApi() {
         Log.i(TAG, "CONNECTING TO GOOGLE API");
         googleApiClient = new GoogleApiClient.Builder(this)
-                // selecting the Sensors API
+                // selecting the APIs
                 .addApi(Fitness.SENSORS_API)
+                .addApi(Fitness.HISTORY_API)
+                .addApi(Fitness.RECORDING_API)
+                .addApi(Fitness.GOALS_API)
                 // specifying the scopes of access
-                .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ))
+                .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
                 .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
-                .addScope(new Scope(Scopes.FITNESS_LOCATION_READ))
+                .addScope(new Scope(Scopes.FITNESS_LOCATION_READ_WRITE))
                 // providing callbacks
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -82,18 +81,14 @@ public class MainActivity extends AppCompatActivity implements
         super.onStart();
         firstCount = true;
         initialNumberOfSteps = 0;
-        if (googleApiClient == null || !googleApiClient.isConnected()) {
-            connectToGoogleApi();
-        }
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        Log.i(TAG, "CONNECTED!");
         subscribeToFitnessAPI();
     }
 
-    private void subscribeToFitnessAPI() {
+    protected void subscribeToFitnessAPI() {
         // Creating a onDataPointListener object to be called when new data is available
         OnDataPointListener onDataPointListener = new OnDataPointListener() {
             @Override
@@ -169,24 +164,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    // Managing OAuth authentication
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        // if user's not logged in or if I don't have permission to acces data
-        if (connectionResult.getErrorCode() == ConnectionResult.SIGN_IN_REQUIRED ||
-                connectionResult.getErrorCode() == FitnessStatusCodes.NEEDS_OAUTH_PERMISSIONS) {
-            try {
-                // Requesting authentication
-                connectionResult.startResolutionForResult(this, REQUEST_OAUTH);
-            } catch (IntentSender.SendIntentException e) {
-                Log.e(TAG, "EXCEPTION WHILE CONNECTING TO THE GOOGLE FIT SERVICES", e);
-            }
-        } else {
-
-            //TAKI BŁĄD JEST CAŁY CZAS!!!!
-            Log.e(TAG, "CONNECTION ISSUE. CODE: = " + connectionResult.getErrorCode());
-        }
-    }
 
     //If user granted access to data, connecting to google fit api
     @Override
@@ -197,10 +174,11 @@ public class MainActivity extends AppCompatActivity implements
             }
         }
     }
+
     @Override
     protected void onStop() {
         super.onStop();
-        if(googleApiClient.isConnected() || googleApiClient.isConnecting()){
+        if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
             googleApiClient.disconnect();
         }
         initialNumberOfSteps = 0;
